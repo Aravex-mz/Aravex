@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#173d2d">
+<title>ARAVEX | Gestão Avícola</title>
+<link rel="manifest" href="manifest.webmanifest">
+<style>
+:root{--green:#173d2d;--green2:#246344;--bg:#f3f6f4;--card:#fff;--ink:#17251d;--muted:#65746b;--line:#dce5df}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px system-ui,Arial,sans-serif}
+header{background:var(--green);color:white;padding:18px 16px}header h1{margin:0;font-size:24px;letter-spacing:1px}header p{margin:4px 0 0;color:#d6e8dc;font-size:13px}
+main{max-width:1050px;margin:auto;padding:16px}.status{font-size:12px;color:var(--muted);margin:0 0 12px}
+nav{display:flex;gap:8px;overflow:auto;padding:4px 0 14px}nav button,.btn{border:0;border-radius:9px;padding:10px 13px;background:var(--green2);color:white;font-weight:600;cursor:pointer;white-space:nowrap}
+nav button.active{background:#102a1e}button.secondary{background:#e5eee8;color:var(--green)}button.danger{background:#a63c35}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px}.card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px;margin-bottom:12px}.metric{font-size:25px;font-weight:750;margin-top:5px}.muted{color:var(--muted);font-size:13px}
+h2{font-size:19px;margin:8px 0 14px}h3{font-size:16px;margin:0 0 10px}
+label{display:block;font-size:13px;font-weight:650;margin:10px 0 5px}input,select,textarea{width:100%;padding:11px;border:1px solid #cbd8cf;border-radius:8px;background:white;font:inherit}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:9px;border-bottom:1px solid var(--line)}.tablewrap{overflow:auto}
+section[hidden]{display:none!important}.notice{background:#fff8df;border:1px solid #eadb9a;padding:12px;border-radius:10px;font-size:13px;line-height:1.45}
+.good{color:#176b3b;font-weight:650}.bad{color:#a63c35;font-weight:650}
+footer{padding:20px 4px;color:var(--muted);font-size:12px}
+@media(min-width:700px){main{padding:22px}}
+</style>
+</head>
+<body>
+<header><h1>ARAVEX</h1><p>Sistema Inteligente de Gestão Avícola · Meticais (MT)</p></header>
+<main>
+<div class="status" id="connection">A verificar ligação…</div>
+<div class="notice" id="firstNotice">Protótipo inicial: os registos ficam guardados neste navegador/dispositivo. A sincronização entre vários telemóveis ainda precisa de um servidor online.</div>
+<nav id="nav">
+<button class="active" data-tab="dashboard">Painel</button><button data-tab="lots">Lotes</button><button data-tab="weights">Pesagens</button><button data-tab="feed">Alimentação</button><button data-tab="mortality">Mortalidade</button><button data-tab="expenses">Despesas</button><button data-tab="sales">Vendas</button><button data-tab="reports">Relatórios</button><button data-tab="users">Utilizadores</button>
+</nav>
+<section id="dashboard">
+<h2>Painel de controlo</h2>
+<div class="grid">
+<div class="card"><div class="muted">Frangos vivos</div><div class="metric" id="birds">0</div></div>
+<div class="card"><div class="muted">Peso médio mais recente</div><div class="metric" id="avgWeight">— kg</div></div>
+<div class="card"><div class="muted">Mortalidade acumulada</div><div class="metric" id="mortRate">0%</div></div>
+<div class="card"><div class="muted">Despesas registadas</div><div class="metric" id="totalExpenses">0 MT</div></div>
+<div class="card"><div class="muted">Receitas de vendas</div><div class="metric" id="totalSales">0 MT</div></div>
+<div class="card"><div class="muted">Resultado registado</div><div class="metric" id="profit">0 MT</div></div>
+</div>
+<div class="card"><h3>Actividade recente</h3><div id="recent" class="muted">Ainda não existem registos.</div></div>
+</section>
+<section id="lots" hidden><h2>Gestão de lotes</h2><div class="card"><h3>Registar novo lote</h3><div class="formgrid">
+<div><label>Nome / código do lote</label><input id="lotName" placeholder="Ex.: Aravex 001"></div>
+<div><label>Data de entrada</label><input id="lotDate" type="date"></div>
+<div><label>Quantidade inicial de pintos</label><input id="lotQty" type="number" min="1"></div>
+<div><label>Origem / fornecedor</label><input id="lotSource" placeholder="Opcional"></div>
+</div><div class="actions"><button class="btn" onclick="addLot()">Guardar lote</button></div></div><div class="card"><h3>Lotes registados</h3><div id="lotTable" class="tablewrap"></div></div></section>
+<section id="weights" hidden><h2>Controlo de peso</h2><div class="card"><h3>Registar pesagem</h3><div class="formgrid">
+<div><label>Lote</label><select id="weightLot"></select></div><div><label>Data da pesagem</label><input id="weightDate" type="date"></div>
+<div><label>Idade (dias)</label><input id="weightAge" type="number" min="0"></div><div><label>Número de aves pesadas</label><input id="sampleN" type="number" min="1"></div>
+<div><label>Peso total das aves pesadas (kg)</label><input id="sampleWeight" type="number" min="0" step="0.001"></div>
+</div><p class="muted">Pese uma amostra representativa e introduza o peso total dessa amostra. O sistema calcula a média por ave.</p><div class="actions"><button class="btn" onclick="addWeight()">Guardar pesagem</button></div></div><div class="card"><h3>Histórico e ganhos</h3><div id="weightTable" class="tablewrap"></div></div></section>
+<section id="feed" hidden><h2>Alimentação</h2><div class="card"><h3>Registar consumo de ração</h3><div class="formgrid"><div><label>Lote</label><select id="feedLot"></select></div><div><label>Data</label><input id="feedDate" type="date"></div><div><label>Tipo de ração</label><input id="feedType" placeholder="Ex.: iniciação / crescimento"></div><div><label>Quantidade utilizada (kg)</label><input id="feedQty" type="number" min="0" step=".01"></div><div><label>Custo total (MT)</label><input id="feedCost" type="number" min="0" step=".01"></div></div><div class="actions"><button class="btn" onclick="addFeed()">Guardar alimentação</button></div></div><div class="card"><div id="feedTable" class="tablewrap"></div></div></section>
+<section id="mortality" hidden><h2>Mortalidade</h2><div class="card"><h3>Registar mortalidade</h3><div class="formgrid"><div><label>Lote</label><select id="mortLot"></select></div><div><label>Data</label><input id="mortDate" type="date"></div><div><label>Número de aves mortas</label><input id="mortQty" type="number" min="1"></div><div><label>Causa / observação</label><input id="mortCause" placeholder="Ex.: causa não identificada"></div></div><div class="actions"><button class="btn" onclick="addMort()">Guardar ocorrência</button></div></div><div class="card"><div id="mortTable" class="tablewrap"></div></div></section>
+<section id="expenses" hidden><h2>Despesas</h2><div class="card"><h3>Registar despesa</h3><div class="formgrid"><div><label>Data</label><input id="expDate" type="date"></div><div><label>Categoria</label><select id="expCat"><option>Pintos</option><option>Ração</option><option>Medicamentos</option><option>Vacinas</option><option>Cama / palha</option><option>Energia / carvão</option><option>Transporte</option><option>Água</option><option>Outros</option></select></div><div><label>Descrição</label><input id="expDesc"></div><div><label>Valor (MT)</label><input id="expValue" type="number" min="0" step=".01"></div></div><div class="actions"><button class="btn" onclick="addExpense()">Guardar despesa</button></div></div><div class="card"><div id="expenseTable" class="tablewrap"></div></div></section>
+<section id="sales" hidden><h2>Vendas</h2><div class="card"><h3>Registar venda</h3><div class="formgrid"><div><label>Data</label><input id="saleDate" type="date"></div><div><label>Lote</label><select id="saleLot"></select></div><div><label>Quantidade vendida</label><input id="saleQty" type="number" min="1"></div><div><label>Preço por frango (MT)</label><input id="salePrice" type="number" min="0" step=".01"></div><div><label>Observação / cliente</label><input id="saleClient"></div></div><div class="actions"><button class="btn" onclick="addSale()">Guardar venda</button></div></div><div class="card"><div id="saleTable" class="tablewrap"></div></div></section>
+<section id="reports" hidden><h2>Relatórios</h2><div class="card"><h3>Resumo financeiro</h3><div id="financialSummary"></div><div class="actions"><button class="btn" onclick="exportCSV()">Exportar registos (CSV)</button><button class="btn secondary" onclick="window.print()">Imprimir / guardar PDF</button></div></div><div class="card"><h3>Notas de interpretação</h3><p class="muted">O resultado apresentado é receitas de vendas menos despesas registadas. Para apurar o lucro real, registe todas as despesas, incluindo custos ainda não lançados, e confirme o stock de aves.</p></div></section>
+<section id="users" hidden><h2>Utilizadores</h2><div class="notice">Nesta versão demonstrativa, os perfis são apenas locais e não constituem autenticação segura. Não utilize dados sensíveis nem partilhe este dispositivo. A versão online multiutilizador terá contas individuais protegidas.</div><div class="card"><h3>Perfil de utilização local</h3><label>Nome do utilizador</label><input id="userName" placeholder="Nome"><label>Função</label><select id="userRole"><option>Administrador</option><option>Trabalhador</option></select><div class="actions"><button class="btn" onclick="saveProfile()">Guardar perfil neste dispositivo</button></div><p class="muted" id="profileText"></p></div></section>
+<footer>ARAVEX · Protótipo funcional inicial · Dados guardados localmente neste dispositivo.</footer>
+</main>
+<script>
+const KEY='aravex_v1_data';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"lots":[],"weights":[],"feed":[],"mort":[],"expenses":[],"sales":[],"profile":{}}');
+const today=()=>new Date().toISOString().slice(0,10);
+['lotDate','weightDate','feedDate','mortDate','expDate','saleDate'].forEach(id=>document.getElementById(id).value=today());
+function save(){localStorage.setItem(KEY,JSON.stringify(db));render()}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function mt(n){return (Number(n)||0).toLocaleString('pt-PT',{maximumFractionDigits:2})+' MT'}
+function lotName(id){return db.lots.find(x=>x.id===id)?.name||'—'}
+function table(headers,rows){if(!rows.length)return '<p class="muted">Sem registos.</p>';return '<table><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(x=>'<td>'+x+'</td>').join('')+'</tr>').join('')+'</tbody></table>'}
+function addLot(){let name=lotNameInput(),qty=+v('lotQty');if(!name||qty<1)return alert('Preencha o nome e a quantidade inicial.');db.lots.push({id:crypto.randomUUID(),name,date:v('lotDate'),qty,source:v('lotSource')});save();clear(['lotName','lotQty','lotSource'])}
+function lotNameInput(){return v('lotName').trim()}
+function addWeight(){let lot=v('weightLot'),n=+v('sampleN'),total=+v('sampleWeight');if(!lot||n<1||total<=0)return alert('Seleccione o lote e introduza uma amostra válida.');db.weights.push({id:crypto.randomUUID(),lot,date:v('weightDate'),age:+v('weightAge'),n,total,avg:total/n});save();clear(['sampleN','sampleWeight'])}
+function addFeed(){if(!v('feedLot')||+v('feedQty')<=0)return alert('Preencha lote e quantidade de ração.');db.feed.push({id:crypto.randomUUID(),lot:v('feedLot'),date:v('feedDate'),type:v('feedType'),qty:+v('feedQty'),cost:+v('feedCost')});save();clear(['feedType','feedQty','feedCost'])}
+function addMort(){let lot=v('mortLot'),qty=+v('mortQty');if(!lot||qty<1)return alert('Seleccione o lote e quantidade.');let dead=db.mort.filter(x=>x.lot===lot).reduce((s,x)=>s+x.qty,0),sold=db.sales.filter(x=>x.lot===lot).reduce((s,x)=>s+x.qty,0),initial=db.lots.find(x=>x.id===lot).qty;if(dead+sold+qty>initial)return alert('A quantidade registada ultrapassa as aves inicialmente registadas, considerando mortes e vendas.');db.mort.push({id:crypto.randomUUID(),lot,date:v('mortDate'),qty,cause:v('mortCause')});save();clear(['mortQty','mortCause'])}
+function addExpense(){let val=+v('expValue');if(val<0||!v('expDesc'))return alert('Introduza a descrição e o valor.');db.expenses.push({id:crypto.randomUUID(),date:v('expDate'),cat:v('expCat'),desc:v('expDesc'),value:val});save();clear(['expDesc','expValue'])}
+function addSale(){let lot=v('saleLot'),qty=+v('saleQty'),price=+v('salePrice');if(!lot||qty<1||price<0)return alert('Preencha os dados da venda.');let dead=db.mort.filter(x=>x.lot===lot).reduce((s,x)=>s+x.qty,0),sold=db.sales.filter(x=>x.lot===lot).reduce((s,x)=>s+x.qty,0),initial=db.lots.find(x=>x.id===lot).qty;if(dead+sold+qty>initial)return alert('A venda ultrapassa a quantidade de aves disponíveis no lote.');db.sales.push({id:crypto.randomUUID(),lot,date:v('saleDate'),qty,price,client:v('saleClient'),total:qty*price});save();clear(['saleQty','salePrice','saleClient'])}
+function v(id){return document.getElementById(id).value}
+function clear(ids){ids.forEach(id=>document.getElementById(id).value='')}
+function totals(){let initial=db.lots.reduce((s,x)=>s+x.qty,0),dead=db.mort.reduce((s,x)=>s+x.qty,0),sold=db.sales.reduce((s,x)=>s+x.qty,0),exp=db.expenses.reduce((s,x)=>s+x.value,0)+db.feed.reduce((s,x)=>s+x.cost,0),sales=db.sales.reduce((s,x)=>s+x.total,0);return {initial,dead,sold,alive:Math.max(0,initial-dead-sold),exp,sales,profit:sales-exp,rate:initial?dead/initial*100:0}}
+function render(){let t=totals();document.getElementById('birds').textContent=t.alive;let last=[...db.weights].sort((a,b)=>b.date.localeCompare(a.date))[0];document.getElementById('avgWeight').textContent=last?last.avg.toFixed(3)+' kg':'— kg';document.getElementById('mortRate').textContent=t.rate.toFixed(1)+'%';document.getElementById('totalExpenses').textContent=mt(t.exp);document.getElementById('totalSales').textContent=mt(t.sales);document.getElementById('profit').textContent=mt(t.profit);document.getElementById('profit').className='metric '+(t.profit>=0?'good':'bad');
+let recent=[...db.weights.map(x=>({d:x.date,t:'Pesagem: '+lotName(x.lot)+' · '+x.avg.toFixed(3)+' kg/ave'})),...db.mort.map(x=>({d:x.date,t:'Mortalidade: '+x.qty+' aves · '+lotName(x.lot)})),...db.sales.map(x=>({d:x.date,t:'Venda: '+x.qty+' aves · '+mt(x.total)}))].sort((a,b)=>b.d.localeCompare(a.d)).slice(0,5);document.getElementById('recent').innerHTML=recent.length?recent.map(x=>esc(x.d)+' — '+esc(x.t)).join('<br>'):'Ainda não existem registos.';
+let opts=db.lots.map(x=>'<option value="'+x.id+'">'+esc(x.name)+'</option>').join('');['weightLot','feedLot','mortLot','saleLot'].forEach(id=>document.getElementById(id).innerHTML=opts||'<option value="">Registe primeiro um lote</option>');
+document.getElementById('lotTable').innerHTML=table(['Lote','Entrada','Inicial','Vivos estimados'],db.lots.map(x=>{let d=db.mort.filter(y=>y.lot===x.id).reduce((s,y)=>s+y.qty,0),s=db.sales.filter(y=>y.lot===x.id).reduce((a,y)=>a+y.qty,0);return [esc(x.name),x.date,x.qty,Math.max(0,x.qty-d-s)]}));
+let ws=[...db.weights].sort((a,b)=>a.date.localeCompare(b.date));document.getElementById('weightTable').innerHTML=table(['Data','Lote','Idade','Média/ave','Ganho desde pesagem anterior'],ws.map((x,i)=>{let prev=ws.slice(0,i).filter(y=>y.lot===x.lot).pop(),gain=prev?((x.avg-prev.avg)*1000).toFixed(1)+' g':'—';return [x.date,esc(lotName(x.lot)),x.age+' dias',x.avg.toFixed(3)+' kg',gain]}));
+document.getElementById('feedTable').innerHTML=table(['Data','Lote','Ração','Quantidade','Custo'],db.feed.map(x=>[x.date,esc(lotName(x.lot)),esc(x.type),x.qty+' kg',mt(x.cost)]));
+document.getElementById('mortTable').innerHTML=table(['Data','Lote','Mortos','Causa'],db.mort.map(x=>[x.date,esc(lotName(x.lot)),x.qty,esc(x.cause)]));
+document.getElementById('expenseTable').innerHTML=table(['Data','Categoria','Descrição','Valor'],db.expenses.map(x=>[x.date,esc(x.cat),esc(x.desc),mt(x.value)]));
+document.getElementById('saleTable').innerHTML=table(['Data','Lote','Quantidade','Preço/un.','Total'],db.sales.map(x=>[x.date,esc(lotName(x.lot)),x.qty,mt(x.price),mt(x.total)]));
+document.getElementById('financialSummary').innerHTML='<p>Receitas: <b>'+mt(t.sales)+'</b></p><p>Despesas gerais e alimentação: <b>'+mt(t.exp)+'</b></p><p>Resultado registado: <b class="'+(t.profit>=0?'good':'bad')+'">'+mt(t.profit)+'</b></p><p class="muted">Aves iniciais: '+t.initial+' · Mortes: '+t.dead+' · Vendidas: '+t.sold+' · Vivas estimadas: '+t.alive+'</p>';
+document.getElementById('profileText').textContent=db.profile.name?'Perfil local: '+db.profile.name+' ('+db.profile.role+')':'Nenhum perfil local definido.'}
+function saveProfile(){db.profile={name:v('userName'),role:v('userRole')};save()}
+function exportCSV(){let lines=[['tipo','data','lote','detalhe','quantidade','valor_MT']];db.weights.forEach(x=>lines.push(['pesagem',x.date,lotName(x.lot),x.age+' dias; média '+x.avg+' kg',x.n,x.total]));db.feed.forEach(x=>lines.push(['alimentação',x.date,lotName(x.lot),x.type,x.qty,x.cost]));db.mort.forEach(x=>lines.push(['mortalidade',x.date,lotName(x.lot),x.cause,x.qty,'']));db.expenses.forEach(x=>lines.push(['despesa',x.date,'',x.cat+' - '+x.desc,'',x.value]));db.sales.forEach(x=>lines.push(['venda',x.date,lotName(x.lot),x.client,x.qty,x.total]));let csv='\ufeff'+lines.map(r=>r.map(z=>'"'+String(z??'').replace(/"/g,'""')+'"').join(';')).join('\n'),a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download='relatorio_aravex.csv';a.click();URL.revokeObjectURL(a.href)}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('main section').forEach(s=>s.hidden=s.id!==b.dataset.tab)});
+function connection(){document.getElementById('connection').innerHTML=navigator.onLine?'<span class="good">● Ligação à Internet disponível</span>':'<span class="bad">● Sem Internet — registos locais disponíveis</span>'}
+window.addEventListener('online',connection);window.addEventListener('offline',connection);connection();render();
+if('serviceWorker'in navigator && location.protocol.startsWith('http'))navigator.serviceWorker.register('./sw.js').catch(()=>{});
+</script>
+</body></html>
